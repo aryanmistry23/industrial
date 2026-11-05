@@ -13,15 +13,15 @@ print("url:",os.getenv("WATSONX_URL"))
 print("apikey:",os.getenv("WATSONX_APIKEY"))
 print("project_id:",bool(os.getenv("WATSONX_PROJECT_ID")))
 llm = WatsonxLLM(
-            model_id=("meta-llama/llama-3-3-70b-instruct"),
-            url=os.getenv("WATSONX_URL"),
-            apikey=os.getenv("WATSONX_APIKEY"),
-            project_id=os.getenv("WATSONX_PROJECT_ID"),
-            params={
-                "decoding_method": "sample",
-                "temperature": 0.7,
-                "max_new_tokens": 512}
-                )
+    model_id="meta-llama/llama-3-3-70b-instruct",
+    url=st.secrets["IBM_WATSONX_URL"],
+    project_id=st.secrets["IBM_WATSONX_PROJECT_ID"],
+    api_key=st.secrets["IBM_WATSONX_APIKEY"],
+    params={
+        "max_new_tokens": 512,
+        "temperature": 0.2,
+    }
+)
 
 loader = PyPDFDirectoryLoader("documents")
 documents = loader.load()

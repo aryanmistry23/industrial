@@ -19,7 +19,7 @@ llm = WatsonxLLM(
     api_key=st.secrets["WATSONX_APIKEY"],
     params={
         "max_new_tokens": 512,
-        "temperature": 0.2,
+        "temperature": 0.7,
     }
 )
 

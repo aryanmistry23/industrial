@@ -90,7 +90,6 @@ retriever = vectorstore.as_retriever(
 )
 
 st.title("Industrial QA Assistant")
-st.caption("Powered by IBM Watsonx and FAISS")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []

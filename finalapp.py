@@ -1,18 +1,12 @@
-
 import os
 import streamlit as st
 from pathlib import Path
 from dotenv import load_dotenv
-
 from langchain_ibm import WatsonxLLM
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-
-# --------------------------------
-# 1. Load credentials
-# --------------------------------
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -27,10 +21,6 @@ url = get_config("WATSONX_URL")
 api_key = get_config("WATSONX_APIKEY")
 project_id = get_config("WATSONX_PROJECT_ID")
 
-# --------------------------------
-# 2. Initialize Watsonx
-# --------------------------------
-
 llm = WatsonxLLM(
     model_id="meta-llama/llama-3-3-70b-instruct",
     url=url,
@@ -41,11 +31,6 @@ llm = WatsonxLLM(
         "temperature": 0.7
     }
 )
-
-# --------------------------------
-# 3. Load PDF documents
-# --------------------------------
-
 PDF_DIR = Path(__file__).parent / "documents"
 
 if not PDF_DIR.exists():
@@ -64,8 +49,6 @@ documents = loader.load()
 if not documents:
     st.error("PDF files found, but no documents were extracted!")
     st.stop()
-
-# Remove empty pages
 documents = [
     doc for doc in documents
     if doc.page_content.strip()
@@ -75,17 +58,12 @@ if not documents:
     st.error("No readable text found in your PDFs!")
     st.stop()
 
-# --------------------------------
-# 4. Split documents into chunks
-# --------------------------------
-
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
     chunk_overlap=150
 )
 
 chunks = text_splitter.split_documents(documents)
-
 if not chunks:
     st.error("No text chunks generated!")
     st.stop()
@@ -93,23 +71,12 @@ if not chunks:
 st.success(
     f"Loaded {len(pdf_files)} PDFs and generated {len(chunks)} chunks."
 )
-
-# --------------------------------
-# 5. Generate embeddings
-# --------------------------------
-
 @st.cache_resource
 def load_embeddings():
     return HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
-
 embeddings = load_embeddings()
-
-# --------------------------------
-# 6. Create FAISS vector database
-# --------------------------------
-
 @st.cache_resource
 def create_vectorstore(_chunks):
     return FAISS.from_documents(
@@ -118,14 +85,9 @@ def create_vectorstore(_chunks):
     )
 
 vectorstore = create_vectorstore(chunks)
-
 retriever = vectorstore.as_retriever(
     search_kwargs={"k": 3}
 )
-
-# --------------------------------
-# 7. Streamlit Chat Interface
-# --------------------------------
 
 st.title("Industrial QA Assistant")
 st.caption("Powered by IBM Watsonx and FAISS")
@@ -137,23 +99,16 @@ for message in st.session_state.messages:
     st.chat_message(message["role"]).markdown(
         message["content"]
     )
-
 prompt = st.chat_input("Ask your industrial question...")
-
 if prompt:
-
     st.chat_message("user").markdown(prompt)
-
     st.session_state.messages.append({
         "role": "user",
         "content": prompt
     })
-
     with st.spinner("Searching documents..."):
-
         try:
             relevant_docs = retriever.invoke(prompt)
-
             context = "\n\n".join(
                 doc.page_content for doc in relevant_docs
             )
@@ -173,13 +128,9 @@ Question:
 
 Answer:
 """
-
-            with st.spinner("Generating answer using Watsonx..."):
-
+            with st.spinner("Generating answer ..."):
                 response = llm.invoke(full_prompt)
-
             st.chat_message("assistant").markdown(response)
-
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": response
